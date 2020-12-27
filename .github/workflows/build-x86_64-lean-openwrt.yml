@@ -9,14 +9,17 @@
 name: Build x86_64 Lean's OpenWrt
 
 on:
-  repository_dispatch:
-    types: [lean, x86_64]
+  #repository_dispatch:
+  #  types: [lean, x86_64]
   #workflow_dispatch:
   #schedule:
   #  - cron: 0 18 * * *
 #  watch:
 #    types: started
 
+  release:
+    types: [published]
+    
   push:
     branches: 
       - master
