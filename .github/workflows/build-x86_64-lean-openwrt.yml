@@ -11,11 +11,15 @@ name: Build x86_64 Lean's OpenWrt
 on:
   repository_dispatch:
     types: [lean, x86_64]
-  workflow_dispatch:
-  schedule:
-    - cron: 0 18 * * *
+  #workflow_dispatch:
+  #schedule:
+  #  - cron: 0 18 * * *
 #  watch:
 #    types: started
+
+  push:
+    branches: 
+      - master
 
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
@@ -206,21 +210,21 @@ jobs:
           zip -qrm packages-server.zip packages-server
           mv packages-server.zip $OPENWRTROOT/bin/targets/$TARGET/$SUBTARGET
 
-      - name: Rclone Upload
-        env:
-          RCLONE_PACKAGE: ${{ secrets.RCLONE_PACKAGE }}
-          RCLONE_FIRMWARE: ${{ secrets.RCLONE_FIRMWARE }}
-        if: env.GENERATE_STATUS == 'success' && env.UPLOAD_RCLONE == 'true' && env.RCLONE_PACKAGE != ''
-        run: |
-          cd $OPENWRTROOT
-          curl https://rclone.org/install.sh | sudo bash
-          mkdir -p ~/.config/rclone/
-          cat << EOF > ~/.config/rclone/rclone.conf
-          ${{ secrets.RCLONE_CONFIG }}
-          EOF
-          rclone copy bin $RCLONE_PACKAGE:$(date +"%Y-%m-%d")/lean --filter-from ../data/rclone/upload-rule.txt
-          rclone copy bin/targets $RCLONE_FIRMWARE:$(date +"%Y-%m-%d")/lean --exclude "packages/"
-          echo "::warning file=Firmware-GoogleDrive::Download Link: https://drive.google.com/drive/folders/1_P2RoPbguY99qJxmCU4SKUgP8Kg0Xr03"
+      #- name: Rclone Upload
+      #  env:
+      #    RCLONE_PACKAGE: ${{ secrets.RCLONE_PACKAGE }}
+      #    RCLONE_FIRMWARE: ${{ secrets.RCLONE_FIRMWARE }}
+      #  if: env.GENERATE_STATUS == 'success' && env.UPLOAD_RCLONE == 'true' && env.RCLONE_PACKAGE != ''
+      #  run: |
+      #    cd $OPENWRTROOT
+      #    curl https://rclone.org/install.sh | sudo bash
+      #    mkdir -p ~/.config/rclone/
+      #    cat << EOF > ~/.config/rclone/rclone.conf
+      #    ${{ secrets.RCLONE_CONFIG }}
+      #    EOF
+      #    rclone copy bin $RCLONE_PACKAGE:$(date +"%Y-%m-%d")/lean --filter-from ../data/rclone/upload-rule.txt
+      #    rclone copy bin/targets $RCLONE_FIRMWARE:$(date +"%Y-%m-%d")/lean --exclude "packages/"
+      #    echo "::warning file=Firmware-GoogleDrive::Download Link: https://drive.google.com/drive/folders/1_P2RoPbguY99qJxmCU4SKUgP8Kg0Xr03"
 
       - name: Organize Files
         id: organize
@@ -239,26 +243,26 @@ jobs:
           df -hT $PWD
           echo "::set-output name=ORGANIZE_STATUS::success"
           
-      - name: Upload Uefi Firmwares To Cowtransfer
-        if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
-        run: |
-          cd $OPENWRTROOT/bin/targets/$TARGET
-          ./transfer cow --block 2621440 -s -p 64 --no-progress ./uefi-images 2>&1 | tee cowtransfer-uefi.log
-          echo "::warning file=Cowtransfer-UEFI=::$(cat cowtransfer-uefi.log | grep https)"
+      #- name: Upload Uefi Firmwares To Cowtransfer
+      #  if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
+      #  run: |
+      #    cd $OPENWRTROOT/bin/targets/$TARGET
+      #    ./transfer cow --block 2621440 -s -p 64 --no-progress ./uefi-images 2>&1 | tee cowtransfer-uefi.log
+      #    echo "::warning file=Cowtransfer-UEFI=::$(cat cowtransfer-uefi.log | grep https)"
           
-      - name: Upload Legacy Firmwares To Cowtransfer
-        if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
-        run: |
-          cd $OPENWRTROOT/bin/targets/$TARGET/
-          ./transfer cow --block 2621440 -s -p 64 --no-progress ./legacy-images 2>&1 | tee cowtransfer-legacy.log
-          echo "::warning file=Cowtransfer-Legacy=::$(cat cowtransfer-legacy.log | grep https)"
+      #- name: Upload Legacy Firmwares To Cowtransfer
+      #  if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
+      #  run: |
+      #    cd $OPENWRTROOT/bin/targets/$TARGET/
+      #    ./transfer cow --block 2621440 -s -p 64 --no-progress ./legacy-images 2>&1 | tee cowtransfer-legacy.log
+      #    echo "::warning file=Cowtransfer-Legacy=::$(cat cowtransfer-legacy.log | grep https)"
           
-      - name: Upload Other Files To Cowtransfer
-        if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
-        run: |
-          cd $OPENWRTROOT/bin/targets/$TARGET/
-          ./transfer cow --block 2621440 -s -p 64 --no-progress ./other-files 2>&1 | tee cowtransfer-other.log
-          echo "::warning file=Cowtransfer-OtherFiles=::$(cat cowtransfer-other.log | grep https)"
+      #- name: Upload Other Files To Cowtransfer
+      #  if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
+      #  run: |
+      #    cd $OPENWRTROOT/bin/targets/$TARGET/
+      #    ./transfer cow --block 2621440 -s -p 64 --no-progress ./other-files 2>&1 | tee cowtransfer-other.log
+      #    echo "::warning file=Cowtransfer-OtherFiles=::$(cat cowtransfer-other.log | grep https)"
           
       - name: Upload Uefi Firmwares To WeTransfer
         if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
@@ -281,8 +285,8 @@ jobs:
           ./transfer wet -s -p 16 --no-progress ./other-files 2>&1 | tee wetransfer-other.log
           echo "::warning file=Wetransfer-OtherFiles::$(cat wetransfer-other.log | grep https)"
           
-      - name: Delete Artifacts
-        uses: geekyeggo/delete-artifact@v1
-        with:
-          name: |
-            bin-archive
+      #- name: Delete Artifacts
+      #  uses: geekyeggo/delete-artifact@v1
+      #  with:
+      #    name: |
+      #      bin-archive
