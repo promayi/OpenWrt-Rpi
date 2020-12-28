@@ -170,42 +170,42 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.generate.outputs.GENERATE_STATUS == 'success'
       with:
-        name: bin-archive
+        name: OpenWRT-x86
         path: openwrt/bin
         
-  Upload:
-    needs: [Build]
-    runs-on: ubuntu-18.04
+  #Upload:
+  #  needs: [Build]
+  #  runs-on: ubuntu-18.04
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
+  #  steps:
+  #    - name: Checkout
+  #      uses: actions/checkout@main
         
-      - name: Restore Variables
-        run: |
-          echo "OPENWRTROOT=$(echo '${{needs.Build.outputs.OPENWRTROOT}}')" >> $GITHUB_ENV
-          echo "PLATFORM=$(echo '${{needs.Build.outputs.PLATFORM}}')" >> $GITHUB_ENV
-          echo "TARGET=$(echo '${{needs.Build.outputs.TARGET}}')" >> $GITHUB_ENV
-          echo "SUBTARGET=$(echo '${{needs.Build.outputs.SUBTARGET}}')" >> $GITHUB_ENV
-          echo "FIRMWARE=$(echo '${{needs.Build.outputs.FIRMWARE}}')" >> $GITHUB_ENV
-          echo "GENERATE_STATUS=$(echo '${{needs.Build.outputs.GENERATE_STATUS}}')" >> $GITHUB_ENV
+  #    - name: Restore Variables
+  #      run: |
+  #        echo "OPENWRTROOT=$(echo '${{needs.Build.outputs.OPENWRTROOT}}')" >> $GITHUB_ENV
+  #        echo "PLATFORM=$(echo '${{needs.Build.outputs.PLATFORM}}')" >> $GITHUB_ENV
+  #        echo "TARGET=$(echo '${{needs.Build.outputs.TARGET}}')" >> $GITHUB_ENV
+  #        echo "SUBTARGET=$(echo '${{needs.Build.outputs.SUBTARGET}}')" >> $GITHUB_ENV
+  #        echo "FIRMWARE=$(echo '${{needs.Build.outputs.FIRMWARE}}')" >> $GITHUB_ENV
+  #        echo "GENERATE_STATUS=$(echo '${{needs.Build.outputs.GENERATE_STATUS}}')" >> $GITHUB_ENV
           
-      - name: Download Bin Folder
-        uses: actions/download-artifact@v2
-        if: env.GENERATE_STATUS == 'success'
-        with:
-          name: bin-archive
-          path: openwrt/bin
+  #    - name: Download Bin Folder
+  #      uses: actions/download-artifact@v2
+  #      if: env.GENERATE_STATUS == 'success'
+  #      with:
+  #        name: bin-archive
+  #        path: openwrt/bin
           
-      - name: Deploy Packages-Server
-        if: env.GENERATE_STATUS == 'success'
-        run: |
-          mkdir -p server/web/snapshots/targets/$TARGET/$SUBTARGET
-          cp -r $OPENWRTROOT/bin/packages server/web/snapshots
-          cp -r $OPENWRTROOT/bin/targets/$TARGET/$SUBTARGET/packages server/web/snapshots/targets/$TARGET/$SUBTARGET
-          mv server packages-server
-          zip -qrm packages-server.zip packages-server
-          mv packages-server.zip $OPENWRTROOT/bin/targets/$TARGET/$SUBTARGET
+  #    - name: Deploy Packages-Server
+  #      if: env.GENERATE_STATUS == 'success'
+  #      run: |
+  #        mkdir -p server/web/snapshots/targets/$TARGET/$SUBTARGET
+  #        cp -r $OPENWRTROOT/bin/packages server/web/snapshots
+  #        cp -r $OPENWRTROOT/bin/targets/$TARGET/$SUBTARGET/packages server/web/snapshots/targets/$TARGET/$SUBTARGET
+  #        mv server packages-server
+  #        zip -qrm packages-server.zip packages-server
+  #        mv packages-server.zip $OPENWRTROOT/bin/targets/$TARGET/$SUBTARGET
 
       #- name: Rclone Upload
       #  env:
@@ -223,22 +223,22 @@ jobs:
       #    rclone copy bin/targets $RCLONE_FIRMWARE:$(date +"%Y-%m-%d")/lean --exclude "packages/"
       #    echo "::warning file=Firmware-GoogleDrive::Download Link: https://drive.google.com/drive/folders/1_P2RoPbguY99qJxmCU4SKUgP8Kg0Xr03"
 
-      - name: Organize Files
-        id: organize
-        if: env.GENERATE_STATUS == 'success' && !cancelled()
-        run: |
-          cd ${FIRMWARE}
-          rm -rf packages
-          cd $OPENWRTROOT/bin/targets/$TARGET/
-          mkdir -p uefi-images
-          mkdir -p legacy-images
-          mkdir -p other-files
-          mv $SUBTARGET/*combined-efi* uefi-images
-          mv $SUBTARGET/*combined* legacy-images
-          mv $SUBTARGET/* other-files
-          curl -fsSL git.io/file-transfer | sh
-          df -hT $PWD
-          echo "::set-output name=ORGANIZE_STATUS::success"
+   #   - name: Organize Files
+   #     id: organize
+   #     if: env.GENERATE_STATUS == 'success' && !cancelled()
+   #     run: |
+   #       cd ${FIRMWARE}
+   #       rm -rf packages
+   #       cd $OPENWRTROOT/bin/targets/$TARGET/
+   #       mkdir -p uefi-images
+   #       mkdir -p legacy-images
+   #       mkdir -p other-files
+   #       mv $SUBTARGET/*combined-efi* uefi-images
+   #       mv $SUBTARGET/*combined* legacy-images
+   #       mv $SUBTARGET/* other-files
+   #       curl -fsSL git.io/file-transfer | sh
+   #       df -hT $PWD
+   #       echo "::set-output name=ORGANIZE_STATUS::success"
           
       #- name: Upload Uefi Firmwares To Cowtransfer
       #  if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_COWTRANSFER == 'true'
@@ -261,26 +261,26 @@ jobs:
       #    ./transfer cow --block 2621440 -s -p 64 --no-progress ./other-files 2>&1 | tee cowtransfer-other.log
       #    echo "::warning file=Cowtransfer-OtherFiles=::$(cat cowtransfer-other.log | grep https)"
           
-      - name: Upload Uefi Firmwares To WeTransfer
-        if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
-        run: |
-          cd $OPENWRTROOT/bin/targets/$TARGET
-          ./transfer wet -s -p 16 --no-progress ./uefi-images 2>&1 | tee wetransfer-uefi.log
-          echo "::warning file=Wetransfer-UEFI=::$(cat wetransfer-uefi.log | grep https)"
+   #   - name: Upload Uefi Firmwares To WeTransfer
+   #     if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
+   #     run: |
+   #       cd $OPENWRTROOT/bin/targets/$TARGET
+   #       ./transfer wet -s -p 16 --no-progress ./uefi-images 2>&1 | tee wetransfer-uefi.log
+   #       echo "::warning file=Wetransfer-UEFI=::$(cat wetransfer-uefi.log | grep https)"
           
-      - name: Upload Legacy Firmwares To WeTransfer
-        if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
-        run: |
-          cd $OPENWRTROOT/bin/targets/$TARGET/
-          ./transfer wet -s -p 16 --no-progress ./legacy-images 2>&1 | tee wetransfer-legacy.log
-          echo "::warning file=Wetransfer-Legacy::$(cat wetransfer-legacy.log | grep https)"
+   #   - name: Upload Legacy Firmwares To WeTransfer
+   #     if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
+   #     run: |
+   #       cd $OPENWRTROOT/bin/targets/$TARGET/
+   #       ./transfer wet -s -p 16 --no-progress ./legacy-images 2>&1 | tee wetransfer-legacy.log
+   #       echo "::warning file=Wetransfer-Legacy::$(cat wetransfer-legacy.log | grep https)"
           
-      - name: Upload Other Files To WeTransfer
-        if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
-        run: |
-          cd $OPENWRTROOT/bin/targets/$TARGET/
-          ./transfer wet -s -p 16 --no-progress ./other-files 2>&1 | tee wetransfer-other.log
-          echo "::warning file=Wetransfer-OtherFiles::$(cat wetransfer-other.log | grep https)"
+   #   - name: Upload Other Files To WeTransfer
+   #     if: steps.organize.outputs.ORGANIZE_STATUS == 'success' && env.UPLOAD_WETRANSFER == 'true'
+   #     run: |
+   #       cd $OPENWRTROOT/bin/targets/$TARGET/
+   #       ./transfer wet -s -p 16 --no-progress ./other-files 2>&1 | tee wetransfer-other.log
+   #       echo "::warning file=Wetransfer-OtherFiles::$(cat wetransfer-other.log | grep https)"
           
       #- name: Delete Artifacts
       #  uses: geekyeggo/delete-artifact@v1
